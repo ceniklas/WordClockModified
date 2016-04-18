@@ -1,3 +1,5 @@
+
+
 // Display output pin assignments
 #define TO 	Display1=Display1 | (1<<0)  
 #define ONE	Display1=Display1 | (1<<1)
@@ -62,7 +64,7 @@ void setup()
   
   pinMode(PWMPin, OUTPUT); 
   
-  Serial.begin(19200);
+  Serial.begin(9600);
   
   
   /*while(true){
@@ -106,27 +108,27 @@ void selftest(void){
 
   
   
-  ledsoff(); MTEN; WriteLEDs(); delay(50); 
-  ledsoff(); HALF; WriteLEDs(); delay(50); 
-  ledsoff(); QUARTER; WriteLEDs(); delay(50); 
-  ledsoff(); TWENTY; WriteLEDs(); delay(50); 
-  ledsoff(); MFIVE; WriteLEDs(); delay(50); 
-  ledsoff(); MINUTES; WriteLEDs(); delay(50); 
-  ledsoff(); PAST; WriteLEDs(); delay(50); 
-  ledsoff(); TO; WriteLEDs(); delay(50); 
-  ledsoff(); ONE; WriteLEDs(); delay(50); 
-  ledsoff(); TWO; WriteLEDs(); delay(50); 
-  ledsoff(); THREE; WriteLEDs(); delay(50); 
-  ledsoff(); FOUR; WriteLEDs(); delay(50); 
-  ledsoff(); HFIVE; WriteLEDs(); delay(50); 
-  ledsoff(); SIX; WriteLEDs(); delay(50); 
-  ledsoff(); SEVEN; WriteLEDs(); delay(50); 
-  ledsoff(); EIGHT; WriteLEDs(); delay(50); 
-  ledsoff(); NINE; WriteLEDs(); delay(50); 
-  ledsoff(); HTEN; WriteLEDs(); delay(50); 
-  ledsoff(); ELEVEN; WriteLEDs(); delay(50); 
-  ledsoff(); TWELVE; WriteLEDs(); delay(50); 
-  ledsoff(); OCLOCK; WriteLEDs(); delay(50); 
+  ledsoff(); MTEN; WriteLEDs(); delay(1000); 
+  ledsoff(); HALF; WriteLEDs(); delay(1000); 
+  ledsoff(); QUARTER; WriteLEDs(); delay(1000); 
+  ledsoff(); TWENTY; WriteLEDs(); delay(1000); 
+  ledsoff(); MFIVE; WriteLEDs(); delay(1000); 
+  ledsoff(); MINUTES; WriteLEDs(); delay(1000); 
+  ledsoff(); PAST; WriteLEDs(); delay(1000); 
+  ledsoff(); TO; WriteLEDs(); delay(1000); 
+  ledsoff(); ONE; WriteLEDs(); delay(1000); 
+  ledsoff(); TWO; WriteLEDs(); delay(1000); 
+  ledsoff(); THREE; WriteLEDs(); delay(1000); 
+  ledsoff(); FOUR; WriteLEDs(); delay(1000); 
+  ledsoff(); HFIVE; WriteLEDs(); delay(1000); 
+  ledsoff(); SIX; WriteLEDs(); delay(1000); 
+  ledsoff(); SEVEN; WriteLEDs(); delay(1000); 
+  ledsoff(); EIGHT; WriteLEDs(); delay(1000); 
+  ledsoff(); NINE; WriteLEDs(); delay(1000); 
+  ledsoff(); HTEN; WriteLEDs(); delay(1000); 
+  ledsoff(); ELEVEN; WriteLEDs(); delay(1000); 
+  ledsoff(); TWELVE; WriteLEDs(); delay(1000); 
+  ledsoff(); OCLOCK; WriteLEDs(); delay(1000); 
 }
 
 
@@ -399,7 +401,7 @@ void loop(void)
   //Uncomment the following line and comment the next one in order to
   //  enable dimming via a potentiometer connected to pin 0:
   //analogWrite(PWMPin, analogRead(0)/4);
-  analogWrite(PWMPin, 255);
+  //analogWrite(PWMPin, 255);
   
     // heart of the timer - keep looking at the millisecond timer on the Arduino
     // and increment the seconds counter every 1000 ms
