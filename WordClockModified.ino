@@ -1,3 +1,6 @@
+#include <DS3231.h>
+// Init the DS3231 using the hardware interface
+DS3231  rtc(SDA, SCL);
 
 
 // Display output pin assignments
@@ -28,11 +31,11 @@
 #define OCLOCK Display3=Display3 | (1<<6)
 #define UNUSED3 Display3=Display3 | (1<<7)
 
-int  hour=9, minute=30, second=00;
+Time t;
+int DST = 0;
+int  hour, minute, second;
 static unsigned long msTick =0;  // the number of Millisecond Ticks since we last 
                                  // incremented the second counter
-int  count;
-int selftestmode;
 char Display1=0, Display2=0, Display3=0;
 
 
@@ -41,8 +44,6 @@ int LEDClockPin=6;
 int LEDDataPin=7;
 int LEDStrobePin=8;
 
-int MinuteButtonPin=2;
-int HourButtonPin=3;
 int PWMPin = 9;
 
 
@@ -53,82 +54,63 @@ void setup()
   pinMode(LEDClockPin, OUTPUT); 
   pinMode(LEDDataPin, OUTPUT); 
   pinMode(LEDStrobePin, OUTPUT); 
+
+  // Initialize the rtc object
+  rtc.begin();
   
+  // The following lines can be uncommented to set the date and time
+  //rtc.setDOW(MONDAY);     // Set Day-of-Week to SUNDAY
+  //rtc.setTime(20, 03, 40);     // Set the time to 12:00:00 (24hr format)
+  //rtc.setDate(25, 04, 2016);   // Set the date to January 1st, 2014
   
   //pinMode(BrightnessPin, INPUT);
-  pinMode(MinuteButtonPin, INPUT); 
-  pinMode(HourButtonPin, INPUT);
-  digitalWrite(MinuteButtonPin, HIGH);  //set internal pullup
-  digitalWrite(HourButtonPin, HIGH); //set internal pullup
   
   
   pinMode(PWMPin, OUTPUT); 
   
-  Serial.begin(9600);
+  Serial.begin(19200);
   
-  
-  /*while(true){
-    Serial.print("In: ");
-    Serial.print(analogRead(11), DEC);
-    Serial.print(", ");
-    Serial.print(digitalRead(13), DEC);
-    Serial.print(", ");
-    Serial.print(digitalRead(12), DEC);
-    Serial.println();
-  }*/
-  
-
   msTick=millis();      // Initialise the msTick counter
-  displaytime();        // display the current time
+  //displaytime();        // display the current time
 }
 
 
 
-void ledsoff(void) {
- Display1=0;
- Display2=0;
- Display3=0;
- }
+void ledsoff(void) { Display1=0; Display2=0; Display3=0; }
 
 void WriteLEDs(void) {
- // Now we write the actual values to the hardware
  shiftOut(LEDDataPin, LEDClockPin, MSBFIRST, Display3);
  shiftOut(LEDDataPin, LEDClockPin, MSBFIRST, Display2);
  shiftOut(LEDDataPin, LEDClockPin, MSBFIRST, Display1);
  digitalWrite(LEDStrobePin,HIGH);
  delay(2);
  digitalWrite(LEDStrobePin,LOW); 
+}
 
-
- }
-
-void selftest(void){
-  Serial.print("TEST\n");
+void selftest(int selftestdelay){
   analogWrite(PWMPin, 255);
 
-  
-  
-  ledsoff(); MTEN; WriteLEDs(); delay(1000); 
-  ledsoff(); HALF; WriteLEDs(); delay(1000); 
-  ledsoff(); QUARTER; WriteLEDs(); delay(1000); 
-  ledsoff(); TWENTY; WriteLEDs(); delay(1000); 
-  ledsoff(); MFIVE; WriteLEDs(); delay(1000); 
-  ledsoff(); MINUTES; WriteLEDs(); delay(1000); 
-  ledsoff(); PAST; WriteLEDs(); delay(1000); 
-  ledsoff(); TO; WriteLEDs(); delay(1000); 
-  ledsoff(); ONE; WriteLEDs(); delay(1000); 
-  ledsoff(); TWO; WriteLEDs(); delay(1000); 
-  ledsoff(); THREE; WriteLEDs(); delay(1000); 
-  ledsoff(); FOUR; WriteLEDs(); delay(1000); 
-  ledsoff(); HFIVE; WriteLEDs(); delay(1000); 
-  ledsoff(); SIX; WriteLEDs(); delay(1000); 
-  ledsoff(); SEVEN; WriteLEDs(); delay(1000); 
-  ledsoff(); EIGHT; WriteLEDs(); delay(1000); 
-  ledsoff(); NINE; WriteLEDs(); delay(1000); 
-  ledsoff(); HTEN; WriteLEDs(); delay(1000); 
-  ledsoff(); ELEVEN; WriteLEDs(); delay(1000); 
-  ledsoff(); TWELVE; WriteLEDs(); delay(1000); 
-  ledsoff(); OCLOCK; WriteLEDs(); delay(1000); 
+  ledsoff(); MTEN; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); HALF; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); QUARTER; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); TWENTY; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); MFIVE; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); MINUTES; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); PAST; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); TO; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); ONE; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); TWO; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); THREE; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); FOUR; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); HFIVE; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); SIX; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); SEVEN; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); EIGHT; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); NINE; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); HTEN; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); ELEVEN; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); TWELVE; WriteLEDs(); delay(selftestdelay); 
+  ledsoff(); OCLOCK; WriteLEDs(); delay(selftestdelay); 
 }
 
 
@@ -137,62 +119,62 @@ void displaytime(void){
   // start by clearing the display to a known state
   ledsoff();
   
-  Serial.print("It is ");
+  //Serial.print("It is ");
   ITIS;
   // now we display the appropriate minute counter
   if ((minute>4) && (minute<10)) { 
     MFIVE; 
     MINUTES; 
-    Serial.print("Five Minutes ");
+    //Serial.print("Five Minutes ");
   } 
   if ((minute>9) && (minute<15)) { 
     MTEN; 
     MINUTES; 
-    Serial.print("Ten Minutes ");
+    //Serial.print("Ten Minutes ");
   }
   if ((minute>14) && (minute<20)) {
     QUARTER; 
-      Serial.print("Quarter ");
+      //Serial.print("Quarter ");
   }
   if ((minute>19) && (minute<25)) { 
     TWENTY; 
     MINUTES; 
-    Serial.print("Twenty Minutes ");
+    //Serial.print("Twenty Minutes ");
   }
   if ((minute>24) && (minute<30)) { 
     TWENTY; 
     MFIVE; 
     MINUTES;
-    Serial.print("Twenty Five Minutes ");
+    //Serial.print("Twenty Five Minutes ");
   }  
   if ((minute>29) && (minute<35)) {
     HALF;
-    Serial.print("Half ");
+    //Serial.print("Half ");
   }
   if ((minute>34) && (minute<40)) { 
     TWENTY; 
     MFIVE; 
     MINUTES;
-    Serial.print("Twenty Five Minutes ");
+    //Serial.print("Twenty Five Minutes ");
   }  
   if ((minute>39) && (minute<45)) { 
     TWENTY; 
     MINUTES; 
-    Serial.print("Twenty Minutes ");
+    //Serial.print("Twenty Minutes ");
   }
   if ((minute>44) && (minute<50)) {
     QUARTER; 
-    Serial.print("Quarter ");
+    //Serial.print("Quarter ");
   }
   if ((minute>49) && (minute<55)) { 
     MTEN; 
     MINUTES; 
-    Serial.print("Ten Minutes ");
+    //Serial.print("Ten Minutes ");
   } 
   if (minute>54) { 
     MFIVE; 
     MINUTES; 
-    Serial.print("Five Minutes ");
+    //Serial.print("Five Minutes ");
   }
 
 
@@ -202,109 +184,109 @@ void displaytime(void){
     switch (hour) {
     case 1: 
       ONE; 
-      Serial.print("One ");
+      //Serial.print("One ");
       break;
     case 2: 
       TWO; 
-      Serial.print("Two ");
+      //Serial.print("Two ");
       break;
     case 3: 
       THREE; 
-      Serial.print("Three ");
+      //Serial.print("Three ");
       break;
     case 4: 
       FOUR; 
-      Serial.print("Four ");
+      //Serial.print("Four ");
       break;
     case 5: 
       HFIVE; 
-      Serial.print("Five ");
+      //Serial.print("Five ");
       break;
     case 6: 
       SIX; 
-      Serial.print("Six ");
+      //Serial.print("Six ");
       break;
     case 7: 
       SEVEN; 
-      Serial.print("Seven ");
+      //Serial.print("Seven ");
       break;
     case 8: 
       EIGHT; 
-      Serial.print("Eight ");
+      //Serial.print("Eight ");
       break;
     case 9: 
       NINE; 
-      Serial.print("Nine ");
+      //Serial.print("Nine ");
       break;
     case 10: 
       HTEN; 
-      Serial.print("Ten ");
+      //Serial.print("Ten ");
       break;
     case 11: 
       ELEVEN; 
-      Serial.print("Eleven ");
+      //Serial.print("Eleven ");
       break;
     case 12: 
       TWELVE; 
-      Serial.print("Twelve ");
+      //Serial.print("Twelve ");
       break;
     }
   OCLOCK;
-  Serial.println("O'Clock");
+  //Serial.println("O'Clock");
   }
   else
     if ((minute < 35) && (minute >4))
     {
       PAST;
-      Serial.print("Past ");
+      //Serial.print("Past ");
       switch (hour) {
     case 1: 
       ONE; 
-      Serial.println("One ");
+      //Serial.println("One ");
       break;
     case 2: 
       TWO; 
-      Serial.println("Two ");
+      //Serial.println("Two ");
       break;
     case 3: 
       THREE; 
-      Serial.println("Three ");
+      //Serial.println("Three ");
       break;
     case 4: 
       FOUR; 
-      Serial.println("Four ");
+      //Serial.println("Four ");
       break;
     case 5: 
       HFIVE; 
-      Serial.println("Five ");
+      //Serial.println("Five ");
       break;
     case 6: 
       SIX; 
-      Serial.println("Six ");
+      //Serial.println("Six ");
       break;
     case 7: 
       SEVEN; 
-      Serial.println("Seven ");
+      //Serial.println("Seven ");
       break;
     case 8: 
       EIGHT; 
-      Serial.println("Eight ");
+      //Serial.println("Eight ");
       break;
     case 9: 
       NINE; 
-      Serial.println("Nine ");
+      //Serial.println("Nine ");
       break;
     case 10: 
       HTEN; 
-      Serial.println("Ten ");
+      //Serial.println("Ten ");
       break;
     case 11: 
       ELEVEN; 
-      Serial.println("Eleven ");
+      //Serial.println("Eleven ");
       break;
     case 12: 
       TWELVE; 
-      Serial.println("Twelve ");
+      //Serial.println("Twelve ");
       break;
       }
     }
@@ -313,154 +295,132 @@ void displaytime(void){
       // if we are greater than 34 minutes past the hour then display
       // the next hour, as we will be displaying a 'to' sign
       TO;
-      Serial.print("To ");
+      //Serial.print("To ");
       switch (hour) {
       case 1: 
         TWO; 
-       Serial.println("Two ");
+       //Serial.println("Two ");
        break;
       case 2: 
         THREE; 
-      Serial.println("Three ");
+      //Serial.println("Three ");
         break;
       case 3: 
         FOUR; 
-      Serial.println("Four ");
+      //Serial.println("Four ");
         break;
       case 4: 
         HFIVE; 
-      Serial.println("Five ");
+      //Serial.println("Five ");
         break;
       case 5: 
         SIX; 
-      Serial.println("Six ");
+      //Serial.println("Six ");
         break;
       case 6: 
         SEVEN; 
-      Serial.println("Seven ");
+      //Serial.println("Seven ");
         break;
       case 7: 
         EIGHT; 
-      Serial.println("Eight ");
+      //Serial.println("Eight ");
         break;
       case 8: 
         NINE; 
-      Serial.println("Nine ");
+      //Serial.println("Nine ");
         break;
       case 9: 
         HTEN; 
-      Serial.println("Ten ");
+      //Serial.println("Ten ");
         break;
       case 10: 
         ELEVEN; 
-      Serial.println("Eleven ");
+      //Serial.println("Eleven ");
         break;
       case 11: 
         TWELVE; 
-      Serial.println("Twelve ");
+      //Serial.println("Twelve ");
         break;
       case 12: 
         ONE; 
-      Serial.println("One ");
+      //Serial.println("One ");
         break;
       }
     }
 
-
-
-   WriteLEDs();
-   
+   WriteLEDs();   
 }
-
-
-void incrementtime(void){
-  // increment the time counters keeping care to rollover as required
-  second=0;
-  if (++minute >= 60) {
-    minute=0;
-    if (++hour == 13) {
-      hour=1;  
-    }
-  }  
-  // debug outputs
-  Serial.println();
-  Serial.print(hour);
-  Serial.print(",");
-  Serial.print(minute);
-  Serial.print(",");
-  Serial.println(second);
-  
-}
-
 
 void loop(void)
 {
   
-  selftest();
+  //selftest(100);
  
   //Uncomment the following line and comment the next one in order to
   //  enable dimming via a potentiometer connected to pin 0:
   //analogWrite(PWMPin, analogRead(0)/4);
-  //analogWrite(PWMPin, 255);
+  analogWrite(PWMPin, 255);
+
+
+  // Send Day-of-Week
+  //Serial.print(rtc.getDOWStr());
+  // Send date
+  //Serial.print(rtc.getDateStr());
+  // Send time
+  //Serial.println(rtc.getTimeStr());
   
-    // heart of the timer - keep looking at the millisecond timer on the Arduino
-    // and increment the seconds counter every 1000 ms
-    if ( millis() - msTick >999) {
-        msTick=millis();
-        second++;
-        // Flash the onboard Pin13 Led so we know something is hapening!
-        //digitalWrite(13,HIGH);
-        //delay(100);
-        //digitalWrite(13,LOW);    
-    }
-    
-    
-    
-    //test to see if we need to increment the time counters
-    if (second==60) 
-    {
-      incrementtime();
-      displaytime();
-    }
+  t = rtc.getTime();
+  
+  second = t.sec; 
+  minute = t.min;
+  hour = t.hour + DST;
 
-    // test to see if a forward button is being held down
-    // for time setting
-    if ( (digitalRead(MinuteButtonPin) ==0 ) && second!=1 ) 
-      // the forward button is down
-      // and it has been more than one second since we
-      // last looked
-    {
-      minute=(((minute/5)*5) +5); 
-      second=0;
-      incrementtime();
-      second++;  // Increment the second counter to ensure that the name
-      // flash doesnt happen when setting time
-      displaytime();
-    }
+  hour = (hour > 12) ? hour - 12 : hour;
 
-    // test to see if the back button is being held down
-    // for time setting
-    if ((digitalRead(HourButtonPin)==0 ) && second!=1) 
-    {
-      /*
-      minute=(((minute/5)*5) -5); 
-      second=0; // decrement the minute counter
-      if (minute<0) { 
-        minute=55; 
-        if (--hour <0) hour=12;
-      } 
-      */
-      minute = (minute/5)*5;  //round minute down to previous 5 min interval
-      if (++hour == 13) {
-        hour=1;  
+  if(t.mon < 3){ 
+    DST = 0;  
+  }
+  else if(t.mon == 3 && DST == 0){
+    if(t.date >= 25 && t.date <= 31){
+      if(t.dow == 7 && t.hour == 2){
+        DST = 1;
       }
-      incrementtime();
-      second++;  // Increment the second counter to ensure that the name
-      // flash doesnt happen when setting time  
-      displaytime();
     }
+  }
+  else if(t.mon > 3 && t.mon < 10){
+    DST = 1;
+  }
+  else if(t.mon == 10 && DST == 1){
+    if(t.date >= 25 && t.date <= 31){
+      if(t.dow == 7 && t.hour == 3){
+        DST = 0;
+      }
+    }
+  }
+  else{
+    DST = 0;
+  }
+  
+  /*if (t.dow == 7 && t.mon == 10 && t.date >= 25 && t.date <= 31 && t.hour == 3)
+  {
+    DST=0;
+    //hour = 2;//rtc.setTime(02, 00, 00);     // Set the time to 12:00:00 (24hr format)
+  }
+  if ((t.dow == 7 && t.mon == 3 && t.date >= 25 && t.date <= 31 && t.hour == 2) || )
+  {
+    DST=1;
+    //rtc.setTime(03, 00, 00);
+  }*/
 
-}		  
+  
+  
+  Serial.print("The time is: ");
+  Serial.print(rtc.getTimeStr());
+  Serial.print(" with a temperature of: ");
+  Serial.println(rtc.getTemp());
+  
+  displaytime();
 
-
+  delay(1000);
+}
 
